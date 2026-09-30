@@ -1,0 +1,55 @@
+# What an application takes from media-kit, and how. Read by `skillctl.sh kit …`
+# (the skill-manager skill in github.com/Thernal/knowledge), which parses it with
+# sed and awk — so keep to this shape: `key: value` scalars, `key:` followed by
+# `  - item` lines, `#` comments. No nesting, no quoting, no inline lists.
+
+name: media-kit
+
+# Rename points, applied to every file taken from here, code and skill alike.
+package: io.thernal.mediakit
+module: :media
+alias: mediakit
+
+# Copied into the application and merged on update. The sample is not.
+code:
+  - media/api
+  - media/impl
+  - media/wiring
+  - media/ui
+  - media/testing
+
+# The public contract — its source, not its README.
+surface:
+  - media/api/src
+  - media/ui/src/commonMain
+  - media/testing/src/commonMain
+
+# Installed into the application's skills directory, renamed like the code.
+skill:
+  - skills/media-kit
+
+# Never copied. A change here is announced on update and read in place.
+docs:
+  - README.md
+  - media/README.md
+  - media/api/README.md
+  - media/ui/README.md
+  - docs
+
+# What the copied modules expect the application to provide.
+requires:
+  - plugin <alias>.kmp.library — Kotlin Multiplatform library (build-logic/convention: KmpLibraryConventionPlugin)
+  - plugin <alias>.compose — kmp.library + Compose Multiplatform, runtime/foundation/ui as implementation (build-logic/convention: ComposeConventionPlugin)
+  - plugin <alias>.injection — Metro, for the wiring module (build-logic/convention: InjectionConventionPlugin)
+  - targets android, iosArm64, iosSimulatorArm64 — the same set as the other kits
+  - agp 9 or later — media/impl enables Android resources in a KMP library (its FileProvider paths)
+  - catalog compose-runtime, compose-foundation, compose-ui (compose-multiplatform = 1.12.0)
+  - catalog coil-compose (coil = 3.5.0)
+  - catalog androidx-activity-compose (androidx-activity = 1.13.0), androidx-core (androidx-core = 1.19.0), androidx-exifinterface (androidx-exifinterface = 1.4.1)
+  - catalog kotlinx-coroutines-core, kotlinx-coroutines-test (kotlinx-coroutines = 1.11.0), kotlin-test
+  - catalog metro-runtime, plugin metro (metro = 1.4.2)
+  - graph the app graph exposes Set<ProvidedValue<*>> and the root installs it with CompositionLocalProvider (arch-kit's ComponentLocals does)
+  - android the root composes inside a ComponentActivity; nothing in the manifest unless the app declares CAMERA itself
+  - ios Info.plist carries NSCameraUsageDescription when the camera is offered
+  - permission the kit's CameraPermission is minimal — replace it with the app's own through a container that replaces MediaCameraPermissionWiring (media/api/README.md)
+  - settings enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS"), and each code part included as a module
