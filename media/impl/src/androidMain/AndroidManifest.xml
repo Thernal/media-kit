@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Shares the file the camera writes into (cache/mediakit-captures). A subclass, so it never
+             merges with a FileProvider the application declares itself. -->
+        <provider
+            android:name="io.thernal.mediakit.media.impl.presentation.CaptureFileProvider"
+            android:authorities="${applicationId}.mediakit.captures"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/mediakit_captures" />
+        </provider>
+    </application>
+</manifest>
