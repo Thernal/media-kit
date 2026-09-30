@@ -2,5 +2,5 @@
 <paths>
     <cache-path
         name="captures"
-        path="mediakit-captures/" />
+        path="media-captures/" />
 </paths>

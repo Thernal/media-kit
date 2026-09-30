@@ -51,7 +51,7 @@ not import permissions-kit (D3).
 
 `TakePicture` needs a content URI the camera app may write to. The kit declares its own FileProvider — a
 subclass, so it never merges with one the app declares — with the authority
-`${applicationId}.mediakit.captures` over a cache directory. That needs Android resources in a KMP
+`${applicationId}.media.captures` over a cache directory. That needs Android resources in a KMP
 library module, which AGP 9 allows (`androidResources.enable`).
 
 ## The crop UI: state, cropper, screen
