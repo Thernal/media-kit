@@ -8,6 +8,8 @@ copies `api`, `impl`, `wiring`, `ui`, `testing` under that path. They apply the 
 `compose-runtime`, `compose-foundation`, `compose-ui`, `coil-compose`, `androidx-activity-compose`,
 `androidx-core`, `androidx-exifinterface`, `kotlinx-coroutines-core`, `metro-runtime` and the Metro plugin.
 
+Without skill-manager, the kit's `README.md` → Installing → *Without it* does the same by hand (copy, rename, provide).
+
 | Module | Who depends on it |
 |---|---|
 | `api` | every feature that picks |

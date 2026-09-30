@@ -37,12 +37,46 @@ ImageCropScreen(
 | [`media/README.md`](media/README.md) | why each part has its shape, and what changed from the app it came from |
 | [`skills/media-kit`](skills/media-kit/SKILL.md) | the same for an agent working in an app that uses the kit |
 
-## For AI agents
+## Installing
 
-An application takes the kit by copy: `skillctl.sh kit install media-kit --package <its package> --module
-<its module path> --alias <its plugin alias>` copies the modules below renamed, installs the `media-kit`
-skill, and records both in `kits.lock`. `kit.yml` lists what the copied modules expect, including the
-manifest and `Info.plist` entries only the application can declare.
+An application takes the kit **by copy**, not as a dependency: the code is copied into the app, renamed to the app's own package, and belongs to the app from then on. Nothing is published to a Maven repository.
+
+### With skill-manager
+
+If you have access to the author's knowledge repository (`github.com/Thernal/knowledge`), its **skill-manager** skill does all of it — copy, rename, the skill, and later updates:
+
+```sh
+skillctl.sh kit install media-kit --package com.example.app --module :core:media --alias app
+```
+
+It copies the `code` parts of [`kit.yml`](kit.yml) renamed, installs the `media-kit` skill and records the copy in `kits.lock`. `kit status` then shows what changed upstream and what the app edited; `kit update` merges the kit's changes three ways, keeping the app's edits. The install prints what the app must provide (`requires`).
+
+### Without it
+
+The same by hand, from a clone of this repository.
+
+1. **Copy** the paths listed under `code` in [`kit.yml`](kit.yml) into the app, under the module path the app gives them: `media/…` → `core/media/…`. Note the commit you copied (`git rev-parse HEAD`) — updates start from it.
+2. **Rename** in everything copied:
+
+   | In the kit | Becomes | Where |
+   |---|---|---|
+   | `io.thernal.mediakit` | the app's package, e.g. `com.example.app` | sources, build files; and the directories `io/thernal/mediakit` |
+   | `:media:` and `":media"`, `projects.media.` | the module path, e.g. `:core:media:`, `projects.core.media.` | build files |
+   | `libs.plugins.mediakit.` | the app's catalog alias, e.g. `libs.plugins.app.` | build files |
+
+   ```sh
+   # in the app, after copying — perl, so it runs the same on macOS and Linux
+   grep -rlI -e io.thernal.mediakit -e io/thernal/mediakit -e :media -e plugins.mediakit. core/media \
+     | xargs perl -pi -e 's/\Qio.thernal.mediakit\E/com.example.app/g; s{\Qio/thernal/mediakit\E}{com/example/app}g; s/\Q:media:\E/:core:media:/g; s/"\Q:media\E"/":core:media"/g; s/projects\.\Qmedia\E\./projects.core.media./g; s/libs\.plugins\.\Qmediakit\E\./libs.plugins.app./g'
+   find core/media -depth -type d -path '*/io/thernal/mediakit' | while read -r d; do
+     mkdir -p "${d%/io/thernal/mediakit}/com/example" && mv "$d" "${d%/io/thernal/mediakit}/com/example/app"
+   done
+   find core/media -depth -type d -empty -delete
+   ```
+
+3. **Provide** what the copy expects — the `requires` list in [`kit.yml`](kit.yml): convention plugins (build-kit's, or the ones in this repository's `build-logic/convention`), catalog entries, settings — and, where listed, platform setup.
+4. **The skill** (optional): copy [`skills/media-kit`](skills/media-kit) into the app's skills directory (`.claude/skills/` for Claude Code), with the same renames, so an agent working in the app knows the kit.
+5. **Updates** are yours to carry: `git diff <the commit you copied> <a newer one> -- <the code paths>` in the kit shows what changed; apply what you want, renamed the same way.
 
 ## Layout
 
