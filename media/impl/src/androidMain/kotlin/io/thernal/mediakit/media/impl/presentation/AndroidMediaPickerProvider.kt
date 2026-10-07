@@ -9,6 +9,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -140,33 +141,47 @@ private fun rememberCamera(
     deliver: (PickResult) -> Unit,
 ): () -> Unit {
     val context = LocalContext.current
-    var pendingCapture by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val pending = rememberSaveable { mutableStateOf<Uri?>(null) }
+    val flow = remember(pending) { CameraCapture(pending) }
     val capture = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
-        onResult = { saved ->
-            val uri = pendingCapture
-            pendingCapture = null
-            if (saved && uri != null) {
-                receive(listOf(uri))
-            } else {
-                deliver(PickResult.Cancelled)
-            }
-        },
+        onResult = { saved -> flow.finish(saved = saved, receive = receive, deliver = deliver) },
     )
-    val start = {
-        val result = context.launchCapture(capture = capture, onTarget = { pendingCapture = it })
-        if (result != null) {
-            pendingCapture = null
-            deliver(result)
+    return { scope.launch { flow.open(context = context, camera = camera, capture = capture, deliver = deliver) } }
+}
+
+/** One capture: the file the camera writes to, from the moment it starts until it answers. */
+private class CameraCapture(
+    private val pending: MutableState<Uri?>,
+) {
+    suspend fun open(
+        context: Context,
+        camera: CameraAccess,
+        capture: ActivityResultLauncher<Uri>,
+        deliver: (PickResult) -> Unit,
+    ) {
+        if (!camera.isGranted && !camera.request()) {
+            deliver(PickResult.PermissionDenied)
+            return
+        }
+        val failure = context.launchCapture(capture = capture, onTarget = { pending.value = it })
+        if (failure != null) {
+            pending.value = null
+            deliver(failure)
         }
     }
-    return {
-        scope.launch {
-            if (camera.isGranted || camera.request()) {
-                start()
-            } else {
-                deliver(PickResult.PermissionDenied)
-            }
+
+    fun finish(
+        saved: Boolean,
+        receive: (List<Uri>) -> Unit,
+        deliver: (PickResult) -> Unit,
+    ) {
+        val uri = pending.value
+        pending.value = null
+        if (saved && uri != null) {
+            receive(listOf(uri))
+        } else {
+            deliver(PickResult.Cancelled)
         }
     }
 }
