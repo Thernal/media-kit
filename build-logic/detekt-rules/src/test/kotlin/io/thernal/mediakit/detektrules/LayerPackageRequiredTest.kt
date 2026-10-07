@@ -13,7 +13,7 @@ class LayerPackageRequiredTest {
     fun `reports a file in the root package of an impl module`() {
         val findings = rule.lint(
             """
-            package io.thernal.mediakit.media.impl
+            package io.thernal.mediakit.features.profile.impl
 
             class BackStackNavigator
             """.trimIndent(),
@@ -26,7 +26,7 @@ class LayerPackageRequiredTest {
     fun `reports a file in the root package of an api module`() {
         val findings = rule.lint(
             """
-            package io.thernal.mediakit.media.api
+            package io.thernal.mediakit.features.profile.api
 
             interface Navigator
             """.trimIndent(),
@@ -39,7 +39,7 @@ class LayerPackageRequiredTest {
     fun `reports a package that is not a layer`() {
         val findings = rule.lint(
             """
-            package io.thernal.mediakit.media.api.deeplink
+            package io.thernal.mediakit.features.profile.api.deeplink
 
             class DeepLink
             """.trimIndent(),
@@ -51,11 +51,11 @@ class LayerPackageRequiredTest {
     @Test
     fun `allows each layer package and its topical sub packages`() {
         val sources = listOf(
-            "io.thernal.mediakit.media.api.domain",
-            "io.thernal.mediakit.media.api.presentation.navigator",
-            "io.thernal.mediakit.media.impl.data",
-            "io.thernal.mediakit.media.impl.domain.deeplink",
-            "io.thernal.mediakit.media.impl.presentation.scene",
+            "io.thernal.mediakit.features.profile.api.domain",
+            "io.thernal.mediakit.features.profile.api.presentation.navigator",
+            "io.thernal.mediakit.features.profile.impl.data",
+            "io.thernal.mediakit.features.profile.impl.domain.deeplink",
+            "io.thernal.mediakit.features.profile.impl.presentation.scene",
         )
 
         sources.forEach { packageName ->
@@ -66,7 +66,7 @@ class LayerPackageRequiredTest {
     @Test
     fun `ignores wiring build-logic and non-module packages`() {
         val sources = listOf(
-            "io.thernal.mediakit.media.wiring",
+            "io.thernal.mediakit.features.profile.wiring",
             "io.thernal.mediakit.buildlogic",
             "io.thernal.mediakit.detektrules.style",
         )
@@ -87,5 +87,44 @@ class LayerPackageRequiredTest {
         )
 
         assertEquals(0, findings.size)
+    }
+
+    @Test
+    fun `accepts a module named after its layer holding code directly`() {
+        val findings = rule.lint(
+            """
+            package io.thernal.mediakit.core.presentation.api.plugin.state
+
+            interface StateHandler
+            """.trimIndent(),
+        )
+
+        assertEquals(0, findings.size)
+    }
+
+    @Test
+    fun `reports a layer package repeated inside a module named after it`() {
+        val findings = rule.lint(
+            """
+            package io.thernal.mediakit.core.presentation.api.presentation.plugin
+
+            interface PluginContext
+            """.trimIndent(),
+        )
+
+        assertEquals(1, findings.size)
+    }
+
+    @Test
+    fun `reports another layer package inside a module named after a layer`() {
+        val findings = rule.lint(
+            """
+            package io.thernal.mediakit.core.presentation.impl.domain
+
+            class Mapper
+            """.trimIndent(),
+        )
+
+        assertEquals(1, findings.size)
     }
 }
