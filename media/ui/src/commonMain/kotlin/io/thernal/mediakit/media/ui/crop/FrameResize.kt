@@ -61,20 +61,25 @@ internal fun resizedLocked(
     }
     val height = minOf(a = (right - left) / ratio, b = room)
     val width = height * ratio
-    val keptLeft = if (handle.doesMoveLeftEdge) {
-        (frame.right - width).coerceAtLeast(bounds.left)
-    } else {
-        frame.left
-    }
-    val keptRight = if (handle.doesMoveLeftEdge) {
-        frame.right
-    } else {
-        (frame.left + width).coerceAtMost(bounds.right)
-    }
+    val (keptLeft, keptRight) = keptHorizontalEdges(frame = frame, handle = handle, width = width, bounds = bounds)
     return if (handle.doesMoveTopEdge) {
         Rect(left = keptLeft, top = frame.bottom - height, right = keptRight, bottom = frame.bottom)
     } else {
         Rect(left = keptLeft, top = frame.top, right = keptRight, bottom = frame.top + height)
+    }
+}
+
+/** The left and right edges for [width]: the dragged side moves, the other stays. */
+private fun keptHorizontalEdges(
+    frame: Rect,
+    handle: CropHandle,
+    width: Float,
+    bounds: Rect,
+): Pair<Float, Float> {
+    return if (handle.doesMoveLeftEdge) {
+        (frame.right - width).coerceAtLeast(bounds.left) to frame.right
+    } else {
+        frame.left to (frame.left + width).coerceAtMost(bounds.right)
     }
 }
 

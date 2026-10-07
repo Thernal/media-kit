@@ -4,25 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import io.thernal.mediakit.media.api.domain.ImageSource
-import io.thernal.mediakit.media.api.domain.MediaFile
-import io.thernal.mediakit.media.api.domain.MimeType
 import io.thernal.mediakit.media.api.domain.PickResult
 import io.thernal.mediakit.media.api.presentation.FilePicker
 import io.thernal.mediakit.media.api.presentation.FilePickerOptions
 import io.thernal.mediakit.media.api.presentation.ImagePicker
 import io.thernal.mediakit.media.api.presentation.ImagePickerOptions
 import io.thernal.mediakit.media.api.presentation.MediaPickerProvider
-
-/** One call a feature made on a picker. */
-sealed interface PickRequest {
-    data class Image(
-        val source: ImageSource,
-        val options: ImagePickerOptions,
-    ) : PickRequest
-
-    data class File(val options: FilePickerOptions) : PickRequest
-}
 
 /**
  * Pickers a test or preview drives: every pick is recorded in [requests] and answered at once by
@@ -88,14 +75,3 @@ class FakeMediaPickerProvider(
         onResult(answer(request))
     }
 }
-
-/** A small file standing in for a picked image; its bytes are not a real image. */
-fun testImage(
-    name: String = "image.jpg",
-    mimeType: String = MimeType.Image.JPEG,
-    size: Int = TEST_FILE_SIZE,
-): MediaFile {
-    return MediaFile(name = name, bytes = ByteArray(size) { it.toByte() }, mimeType = mimeType)
-}
-
-private const val TEST_FILE_SIZE = 16

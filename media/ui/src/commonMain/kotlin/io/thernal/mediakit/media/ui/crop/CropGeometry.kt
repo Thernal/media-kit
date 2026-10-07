@@ -124,34 +124,47 @@ internal fun toNormalizedCropRect(
     if (displayImageRect == Rect.Zero) {
         return NormalizedCropRect.FULL
     }
-    val center = displayImageRect.center + imageOffset
-    val angle = rotation * (PI.toFloat() / HALF_TURN)
-    val cosA = cos(angle)
-    val sinA = sin(angle)
-    // Corners relative to the image centre, turned back by the rotation (stored counter-clockwise).
-    val corners = listOf(frameRect.topLeft, frameRect.topRight, frameRect.bottomLeft, frameRect.bottomRight)
-        .map { it - center }
-        .map { Offset(x = it.x * cosA - it.y * sinA, y = it.x * sinA + it.y * cosA) }
+    val corners = cornersAroundImageCentre(
+        frameRect = frameRect,
+        center = displayImageRect.center + imageOffset,
+        rotation = rotation,
+    )
     val sides = Size(width = displayImageRect.width * imageScale, height = displayImageRect.height * imageScale)
-    val imageWidth = if (isQuarterTurned(rotation)) {
-        sides.height
+    val image = if (isQuarterTurned(rotation)) {
+        Size(width = sides.height, height = sides.width)
     } else {
-        sides.width
-    }
-    val imageHeight = if (isQuarterTurned(rotation)) {
-        sides.width
-    } else {
-        sides.height
+        sides
     }
     val normalized = corners.map { corner ->
         Offset(
-            x = (corner.x + imageWidth / 2f) / imageWidth,
-            y = (corner.y + imageHeight / 2f) / imageHeight,
+            x = (corner.x + image.width / 2f) / image.width,
+            y = (corner.y + image.height / 2f) / image.height,
         )
     }
-    val minX = normalized.minOf { it.x }
-    val maxX = normalized.maxOf { it.x }
-    // The points are in the mirrored image's space; the source's is reflected horizontally.
+    return boundingCropRect(points = normalized, mirrored = mirrored)
+}
+
+/** The frame's corners relative to the image centre, turned back by the rotation (stored counter-clockwise). */
+private fun cornersAroundImageCentre(
+    frameRect: Rect,
+    center: Offset,
+    rotation: Float,
+): List<Offset> {
+    val angle = rotation * (PI.toFloat() / HALF_TURN)
+    val cosA = cos(angle)
+    val sinA = sin(angle)
+    return listOf(frameRect.topLeft, frameRect.topRight, frameRect.bottomLeft, frameRect.bottomRight)
+        .map { it - center }
+        .map { Offset(x = it.x * cosA - it.y * sinA, y = it.x * sinA + it.y * cosA) }
+}
+
+/** The box around [points], within the image. They are in the mirrored image's space; the source's is reflected. */
+private fun boundingCropRect(
+    points: List<Offset>,
+    mirrored: Boolean,
+): NormalizedCropRect {
+    val minX = points.minOf { it.x }
+    val maxX = points.maxOf { it.x }
     val (left, right) = if (mirrored) {
         1f - maxX to 1f - minX
     } else {
@@ -159,9 +172,9 @@ internal fun toNormalizedCropRect(
     }
     return NormalizedCropRect(
         left = left.coerceIn(0f, 1f),
-        top = normalized.minOf { it.y }.coerceIn(0f, 1f),
+        top = points.minOf { it.y }.coerceIn(0f, 1f),
         right = right.coerceIn(0f, 1f),
-        bottom = normalized.maxOf { it.y }.coerceIn(0f, 1f),
+        bottom = points.maxOf { it.y }.coerceIn(0f, 1f),
     )
 }
 

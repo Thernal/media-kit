@@ -8,7 +8,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import io.thernal.mediakit.media.api.domain.ImageSource
 import io.thernal.mediakit.media.api.domain.MimeType
 import io.thernal.mediakit.media.api.domain.PickResult
-import io.thernal.mediakit.media.api.presentation.CameraPermission
+import io.thernal.mediakit.media.api.presentation.CameraAccess
 import io.thernal.mediakit.media.api.presentation.FilePicker
 import io.thernal.mediakit.media.api.presentation.FilePickerOptions
 import io.thernal.mediakit.media.api.presentation.ImagePicker
@@ -22,14 +22,6 @@ import platform.PhotosUI.PHPickerViewController
 import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIImagePickerController
 import platform.UIKit.UIImagePickerControllerSourceType
-
-actual fun platformMediaPickerProvider(): MediaPickerProvider {
-    return IosMediaPickerProvider
-}
-
-actual fun defaultCameraPermission(): CameraPermission {
-    return IosCameraPermission
-}
 
 /**
  * The gallery is PHPicker (no permission), the camera UIImagePickerController, documents and files
@@ -64,43 +56,23 @@ internal object IosMediaPickerProvider : MediaPickerProvider {
             ImagePicker { source ->
                 val unavailable = { deliver(PickResult.Unavailable) }
                 when (source) {
-                    ImageSource.Gallery -> {
-                        val configuration = PHPickerConfiguration().apply {
-                            selectionLimit = currentOptions.maxItems.toLong()
-                            filter = PHPickerFilter.imagesFilter()
-                        }
-                        val picker = PHPickerViewController(configuration = configuration)
-                        picker.delegate = delegates.gallery
-                        PickerPresenter.present(controller = picker, onUnavailable = unavailable)
-                    }
+                    ImageSource.Gallery -> presentGallery(
+                        delegate = delegates.gallery,
+                        maxItems = currentOptions.maxItems,
+                        onUnavailable = unavailable,
+                    )
 
-                    ImageSource.Documents -> {
-                        val picker = UIDocumentPickerViewController(
-                            forOpeningContentTypes = contentTypesFor(listOf(MimeType.Image.ALL)),
-                            asCopy = true,
-                        )
-                        picker.delegate = delegates.documents
-                        PickerPresenter.present(controller = picker, onUnavailable = unavailable)
-                    }
+                    ImageSource.Documents -> presentImageDocuments(
+                        delegate = delegates.documents,
+                        onUnavailable = unavailable,
+                    )
 
                     ImageSource.Camera -> scope.launch {
-                        val cameraSource = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
-                        when {
-                            !UIImagePickerController.isSourceTypeAvailable(
-                                cameraSource,
-                            ) -> deliver(PickResult.Unavailable)
-
-                            !camera.isGranted && !camera.request() -> deliver(PickResult.PermissionDenied)
-
-                            else -> {
-                                val picker = UIImagePickerController().apply {
-                                    sourceType = cameraSource
-                                    allowsEditing = false
-                                }
-                                picker.delegate = delegates.camera
-                                PickerPresenter.present(controller = picker, onUnavailable = unavailable)
-                            }
-                        }
+                        presentCamera(
+                            delegate = delegates.camera,
+                            camera = camera,
+                            deliver = { result -> deliver(result) },
+                        )
                     }
                 }
             }
@@ -142,3 +114,52 @@ private class ImageDelegates(
     val camera: CameraDelegate,
     val documents: DocumentDelegate,
 )
+
+private fun presentGallery(
+    delegate: GalleryDelegate,
+    maxItems: Int,
+    onUnavailable: () -> Unit,
+) {
+    val configuration = PHPickerConfiguration().apply {
+        selectionLimit = maxItems.toLong()
+        filter = PHPickerFilter.imagesFilter()
+    }
+    val picker = PHPickerViewController(configuration = configuration)
+    picker.delegate = delegate
+    PickerPresenter.present(controller = picker, onUnavailable = onUnavailable)
+}
+
+private fun presentImageDocuments(
+    delegate: DocumentDelegate,
+    onUnavailable: () -> Unit,
+) {
+    val picker = UIDocumentPickerViewController(
+        forOpeningContentTypes = contentTypesFor(listOf(MimeType.Image.ALL)),
+        asCopy = true,
+    )
+    picker.delegate = delegate
+    PickerPresenter.present(controller = picker, onUnavailable = onUnavailable)
+}
+
+/** The camera when the device has one and the permission is (or becomes) granted. */
+private suspend fun presentCamera(
+    delegate: CameraDelegate,
+    camera: CameraAccess,
+    deliver: (PickResult) -> Unit,
+) {
+    val cameraSource = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
+    when {
+        !UIImagePickerController.isSourceTypeAvailable(cameraSource) -> deliver(PickResult.Unavailable)
+
+        !camera.isGranted && !camera.request() -> deliver(PickResult.PermissionDenied)
+
+        else -> {
+            val picker = UIImagePickerController().apply {
+                sourceType = cameraSource
+                allowsEditing = false
+            }
+            picker.delegate = delegate
+            PickerPresenter.present(controller = picker, onUnavailable = { deliver(PickResult.Unavailable) })
+        }
+    }
+}

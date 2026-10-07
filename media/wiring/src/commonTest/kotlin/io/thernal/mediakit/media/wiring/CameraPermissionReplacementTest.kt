@@ -16,8 +16,8 @@ import kotlin.test.assertSame
 
 /** What an app with its own permission code writes: a container replacing the kit's. */
 @BindingContainer
-@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionWiring::class])
-interface AppCameraPermissionWiring {
+@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionProvidersModule::class])
+interface AppCameraPermissionBindingsModule {
     companion object {
         @Provides
         @SingleIn(AppScope::class)

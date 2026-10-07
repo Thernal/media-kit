@@ -43,7 +43,7 @@ The camera needs the permission on iOS always, and on Android only when the app'
 `CAMERA`. The image picker asks through `CameraPermission` (`isGranted`, `request()`), a contract in `api`.
 The kit's own implementation is deliberately minimal — ask once, report the answer, no rationale, no
 settings — and marked in code as the part to replace (D51): an app with its own permission handling
-contributes a Metro container that `replaces` `MediaCameraPermissionWiring`, and never edits the copied
+contributes a Metro container that `replaces` `MediaCameraPermissionProvidersModule`, and never edits the copied
 file. With permissions-kit that container is a one-file adapter (`media/api/README.md`). media-kit does
 not import permissions-kit (D3).
 

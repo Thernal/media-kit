@@ -45,33 +45,8 @@ private suspend fun cropOn(
         val decoded = BitmapFactory.decodeByteArray(source.bytes, 0, source.bytes.size)
             ?: error("Cannot decode ${source.name}")
         val upright = decoded.upright(exifOrientation(source.bytes))
-        val x = (rect.left * upright.width).toInt().coerceIn(0, upright.width - 1)
-        val y = (rect.top * upright.height).toInt().coerceIn(0, upright.height - 1)
-        val width = (rect.width * upright.width).toInt().coerceIn(1, upright.width - x)
-        val height = (rect.height * upright.height).toInt().coerceIn(1, upright.height - y)
-        val matrix = Matrix().apply {
-            if (mirrored) {
-                preScale(-1f, 1f)
-            }
-            // Android rotates clockwise; the rotation is counter-clockwise.
-            postRotate(-rotation)
-        }
-        val turned = Bitmap.createBitmap(upright, x, y, width, height, matrix, true)
-        val (outWidth, outHeight) = scaledToFit(width = turned.width, height = turned.height, maxSize = maxOutputSize)
-        val result = if (outWidth == turned.width) {
-            turned
-        } else {
-            Bitmap.createScaledBitmap(
-                turned,
-                outWidth,
-                outHeight,
-                true,
-            )
-        }
-        val bytes = ByteArrayOutputStream().use { stream ->
-            result.compress(Bitmap.CompressFormat.JPEG, jpegQuality, stream)
-            stream.toByteArray()
-        }
+        val result = upright.cropped(rect = rect, rotation = rotation, mirrored = mirrored).fitted(maxOutputSize)
+        val bytes = result.jpeg(jpegQuality)
         MediaFile(
             name = croppedName(source.name),
             bytes = bytes,
@@ -106,4 +81,41 @@ private fun Bitmap.upright(orientation: Int): Bitmap {
         else -> return this
     }
     return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+}
+
+/** The [rect] of this bitmap, turned by [rotation] degrees counter-clockwise and flipped if [mirrored]. */
+private fun Bitmap.cropped(
+    rect: NormalizedCropRect,
+    rotation: Float,
+    mirrored: Boolean,
+): Bitmap {
+    val x = (rect.left * width).toInt().coerceIn(0, width - 1)
+    val y = (rect.top * height).toInt().coerceIn(0, height - 1)
+    val cropWidth = (rect.width * width).toInt().coerceIn(1, width - x)
+    val cropHeight = (rect.height * height).toInt().coerceIn(1, height - y)
+    val matrix = Matrix().apply {
+        if (mirrored) {
+            preScale(-1f, 1f)
+        }
+        // Android rotates clockwise; the rotation is counter-clockwise.
+        postRotate(-rotation)
+    }
+    return Bitmap.createBitmap(this, x, y, cropWidth, cropHeight, matrix, true)
+}
+
+/** This bitmap, scaled down so its longest side is at most [maxSize]; unchanged without one. */
+private fun Bitmap.fitted(maxSize: Int?): Bitmap {
+    val (outWidth, outHeight) = scaledToFit(width = width, height = height, maxSize = maxSize)
+    return if (outWidth == width) {
+        this
+    } else {
+        Bitmap.createScaledBitmap(this, outWidth, outHeight, true)
+    }
+}
+
+private fun Bitmap.jpeg(quality: Int): ByteArray {
+    return ByteArrayOutputStream().use { stream ->
+        compress(Bitmap.CompressFormat.JPEG, quality, stream)
+        stream.toByteArray()
+    }
 }

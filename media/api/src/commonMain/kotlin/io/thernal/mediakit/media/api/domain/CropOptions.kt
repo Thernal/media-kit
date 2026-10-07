@@ -44,9 +44,7 @@ data class CropOptions(
         require(jpegQuality in 0..MAX_JPEG_QUALITY) { "jpegQuality must be 0–100, was $jpegQuality" }
         require(maxOutputSize == null || maxOutputSize > 0) { "maxOutputSize must be positive" }
     }
-
-    private companion object {
-        const val DEFAULT_JPEG_QUALITY = 90
-        const val MAX_JPEG_QUALITY = 100
-    }
 }
+
+private const val DEFAULT_JPEG_QUALITY = 90
+private const val MAX_JPEG_QUALITY = 100
