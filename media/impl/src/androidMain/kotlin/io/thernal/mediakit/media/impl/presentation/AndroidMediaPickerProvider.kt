@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -19,7 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import io.thernal.mediakit.media.api.domain.ImageSource
 import io.thernal.mediakit.media.api.domain.MimeType
 import io.thernal.mediakit.media.api.domain.PickResult
-import io.thernal.mediakit.media.api.presentation.CameraPermission
+import io.thernal.mediakit.media.api.presentation.CameraAccess
 import io.thernal.mediakit.media.api.presentation.FilePicker
 import io.thernal.mediakit.media.api.presentation.FilePickerOptions
 import io.thernal.mediakit.media.api.presentation.ImagePicker
@@ -29,18 +30,8 @@ import io.thernal.mediakit.media.api.presentation.MediaPickerProvider
 import io.thernal.mediakit.media.impl.domain.PickedItem
 import io.thernal.mediakit.media.impl.domain.prepareImage
 import io.thernal.mediakit.media.impl.domain.toPickResult
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
-actual fun platformMediaPickerProvider(): MediaPickerProvider {
-    return AndroidMediaPickerProvider
-}
-
-actual fun defaultCameraPermission(): CameraPermission {
-    return AndroidCameraPermission
-}
-
-// PickMultipleVisualMedia refuses a limit below two; a single pick uses PickVisualMedia instead.
-private const val MIN_MULTIPLE_PICK = 2
 
 /**
  * The gallery is the system Photo Picker (no permission), the camera is the system camera app writing
@@ -56,77 +47,26 @@ internal object AndroidMediaPickerProvider : MediaPickerProvider {
         val scope = rememberCoroutineScope()
         val deliver by rememberUpdatedState(onResult)
         val camera = LocalCameraPermission.current.rememberCameraAccess()
-        var pendingCapture by rememberSaveable { mutableStateOf<Uri?>(null) }
-
-        fun receive(uris: List<Uri>) {
+        val receive: (List<Uri>) -> Unit = { uris ->
             scope.launch { deliver(context.readImages(uris = uris, maxFileSizeBytes = options.maxFileSizeBytes)) }
         }
-
-        val gallery = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia(),
-            onResult = { uri -> receive(listOfNotNull(uri)) },
-        )
-        val multipleContract = remember(options.maxItems) {
-            ActivityResultContracts.PickMultipleVisualMedia(maxOf(a = MIN_MULTIPLE_PICK, b = options.maxItems))
-        }
-        val galleryMultiple = rememberLauncherForActivityResult(contract = multipleContract, onResult = ::receive)
+        val openGallery = rememberGallery(maxItems = options.maxItems, receive = receive)
         val documents = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
             onResult = { uri -> receive(listOfNotNull(uri)) },
         )
-        val capture = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.TakePicture(),
-            onResult = { saved ->
-                val uri = pendingCapture
-                pendingCapture = null
-                if (saved && uri != null) {
-                    receive(listOf(uri))
-                } else {
-                    deliver(PickResult.Cancelled)
-                }
-            },
+        val openCamera = rememberCamera(
+            camera = camera,
+            scope = scope,
+            receive = receive,
+            deliver = { result -> deliver(result) },
         )
-
-        fun openCamera() {
-            if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-                deliver(PickResult.Unavailable)
-                return
-            }
-            val uri = context.newCaptureUri()
-            pendingCapture = uri
-            try {
-                capture.launch(uri)
-            } catch (_: ActivityNotFoundException) {
-                pendingCapture = null
-                deliver(PickResult.Unavailable)
-            } catch (_: SecurityException) {
-                // The manifest declares CAMERA and it is not granted.
-                pendingCapture = null
-                deliver(PickResult.PermissionDenied)
-            }
-        }
-
         return remember(key1 = options, key2 = camera) {
             ImagePicker { source ->
                 when (source) {
-                    ImageSource.Gallery -> {
-                        val request = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        if (options.maxItems > 1) {
-                            galleryMultiple.launch(request)
-                        } else {
-                            gallery.launch(request)
-                        }
-                    }
-
+                    ImageSource.Gallery -> openGallery()
                     ImageSource.Documents -> documents.launch(arrayOf(MimeType.Image.ALL))
-
-                    ImageSource.Camera -> scope.launch {
-                        if (camera.isGranted || camera.request()) {
-                            openCamera()
-                        } else {
-                            deliver(PickResult.PermissionDenied)
-                        }
-                    }
+                    ImageSource.Camera -> openCamera()
                 }
             }
         }
@@ -164,6 +104,94 @@ internal object AndroidMediaPickerProvider : MediaPickerProvider {
     }
 }
 
+/** The Photo Picker: one image, or up to [maxItems]. */
+@Composable
+private fun rememberGallery(
+    maxItems: Int,
+    receive: (List<Uri>) -> Unit,
+): () -> Unit {
+    val single = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> receive(listOfNotNull(uri)) },
+    )
+    val multipleContract = remember(maxItems) {
+        ActivityResultContracts.PickMultipleVisualMedia(maxOf(a = MIN_MULTIPLE_PICK, b = maxItems))
+    }
+    val multiple = rememberLauncherForActivityResult(contract = multipleContract, onResult = receive)
+    return {
+        val request = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        if (maxItems > 1) {
+            multiple.launch(request)
+        } else {
+            single.launch(request)
+        }
+    }
+}
+
+/**
+ * The system camera app, writing into the kit's FileProvider, once [camera] is granted; the target
+ * survives a recreation.
+ */
+@Composable
+private fun rememberCamera(
+    camera: CameraAccess,
+    scope: CoroutineScope,
+    receive: (List<Uri>) -> Unit,
+    deliver: (PickResult) -> Unit,
+): () -> Unit {
+    val context = LocalContext.current
+    var pendingCapture by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val capture = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { saved ->
+            val uri = pendingCapture
+            pendingCapture = null
+            if (saved && uri != null) {
+                receive(listOf(uri))
+            } else {
+                deliver(PickResult.Cancelled)
+            }
+        },
+    )
+    val start = {
+        val result = context.launchCapture(capture = capture, onTarget = { pendingCapture = it })
+        if (result != null) {
+            pendingCapture = null
+            deliver(result)
+        }
+    }
+    return {
+        scope.launch {
+            if (camera.isGranted || camera.request()) {
+                start()
+            } else {
+                deliver(PickResult.PermissionDenied)
+            }
+        }
+    }
+}
+
+/** Starts the capture into a new file; returns the outcome when it could not start. */
+private fun Context.launchCapture(
+    capture: ActivityResultLauncher<Uri>,
+    onTarget: (Uri) -> Unit,
+): PickResult? {
+    if (!packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+        return PickResult.Unavailable
+    }
+    val uri = newCaptureUri()
+    onTarget(uri)
+    return try {
+        capture.launch(uri)
+        null
+    } catch (_: ActivityNotFoundException) {
+        PickResult.Unavailable
+    } catch (_: SecurityException) {
+        // The manifest declares CAMERA and it is not granted.
+        PickResult.PermissionDenied
+    }
+}
+
 private suspend fun Context.readImages(
     uris: List<Uri>,
     maxFileSizeBytes: Long?,
@@ -189,3 +217,6 @@ private suspend fun Context.readImages(
     }
     return items.toPickResult()
 }
+
+// PickMultipleVisualMedia refuses a limit below two; a single pick uses PickVisualMedia instead.
+private const val MIN_MULTIPLE_PICK = 2

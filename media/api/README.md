@@ -110,8 +110,8 @@ object PermissionsKitCameraPermission : CameraPermission {
 }
 
 @BindingContainer
-@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionWiring::class])
-interface AppCameraPermissionWiring {
+@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionProvidersModule::class])
+interface AppCameraPermissionBindingsModule {
     companion object {
         @Provides
         fun provideCameraPermission(): CameraPermission = PermissionsKitCameraPermission
@@ -138,7 +138,7 @@ The kit's `impl` declares its own FileProvider for camera output; the manifests 
 ## Installing the provider
 
 `wiring` contributes the pickers and the camera permission into the app graph's `Set<ProvidedValue<*>>`,
-which the root installs once (arch-kit's `ComponentLocals` does). Without it every pick is `Cancelled`.
+which the root installs once (arch-kit's `ContributedLocals` does). Without it every pick is `Cancelled`.
 
 ## Previews and tests
 

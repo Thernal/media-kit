@@ -22,7 +22,7 @@ Without skill-manager, the kit's `README.md` → Installing → *Without it* doe
 
 ## The root
 
-`MediaWiring` contributes `LocalMediaPickerProvider` and `LocalCameraPermission` into
+`MediaProvidersModule` contributes `LocalMediaPickerProvider` and `LocalCameraPermission` into
 `Set<ProvidedValue<*>>`. The app graph exposes the set and the root installs it once:
 
 ```kotlin
@@ -34,7 +34,7 @@ interface AppGraph {
 CompositionLocalProvider(*graph.compositionLocals.toTypedArray()) { AppContent() }
 ```
 
-With arch-kit, `ComponentLocals(…)` installs the same set. On Android the root must be inside a
+With arch-kit, `ContributedLocals(…)` installs the same set. On Android the root must be inside a
 `ComponentActivity` (the launchers need an activity-result registry).
 
 ## Manifest and Info.plist
@@ -54,8 +54,8 @@ permission):
 object PermissionsKitCameraPermission : CameraPermission { … rememberPermissionState(AppPermission.Camera) … }
 
 @BindingContainer
-@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionWiring::class])
-interface AppCameraPermissionWiring {
+@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionProvidersModule::class])
+interface AppCameraPermissionBindingsModule {
     companion object {
         @Provides
         fun provideCameraPermission(): CameraPermission = PermissionsKitCameraPermission

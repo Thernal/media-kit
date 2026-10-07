@@ -9,7 +9,6 @@ import dev.zacsweers.metro.Provides
 import io.thernal.mediakit.media.api.presentation.CameraPermission
 import io.thernal.mediakit.media.api.presentation.LocalCameraPermission
 import io.thernal.mediakit.media.api.presentation.LocalMediaPickerProvider
-import io.thernal.mediakit.media.impl.presentation.defaultCameraPermission
 import io.thernal.mediakit.media.impl.presentation.platformMediaPickerProvider
 
 /**
@@ -18,7 +17,7 @@ import io.thernal.mediakit.media.impl.presentation.platformMediaPickerProvider
  */
 @BindingContainer
 @ContributesTo(AppScope::class)
-interface MediaWiring {
+interface MediaProvidersModule {
     companion object {
         @Provides
         @IntoSet
@@ -30,29 +29,6 @@ interface MediaWiring {
         @IntoSet
         fun provideCameraPermissionLocal(cameraPermission: CameraPermission): ProvidedValue<*> {
             return LocalCameraPermission provides cameraPermission
-        }
-    }
-}
-
-/**
- * The kit's minimal camera permission (ask once, report the answer). An app with its own permission
- * handling replaces this container rather than editing it:
- *
- * ```
- * @BindingContainer
- * @ContributesTo(AppScope::class, replaces = [MediaCameraPermissionWiring::class])
- * interface AppCameraPermissionWiring {
- *     @Binds val PermissionsKitCameraPermission.bind: CameraPermission
- * }
- * ```
- */
-@BindingContainer
-@ContributesTo(AppScope::class)
-interface MediaCameraPermissionWiring {
-    companion object {
-        @Provides
-        fun provideCameraPermission(): CameraPermission {
-            return defaultCameraPermission()
         }
     }
 }

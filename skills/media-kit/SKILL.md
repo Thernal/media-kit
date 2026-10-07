@@ -1,6 +1,6 @@
 ---
 name: media-kit
-description: Writes, reviews and debugs image and file picking, image cropping and zoomable image previews in Compose Multiplatform apps that use media-kit (packages io.thernal.mediakit.media.*; rememberImagePicker, rememberFilePicker, ImageSource, PickResult, Rejection, MediaFile, MimeType, CameraPermission, MediaCameraPermissionWiring, ImageCropScreen, ImageCropper, rememberImageCropState, CropOptions, AspectRatio, ZoomableImage, FakeMediaPickerProvider). Use it for any such work in such a project, even when the kit is not named - an avatar or photo upload, choosing several photos, taking a photo, attaching a PDF, file size or type limits, HEIC photos, rotated photos, cropping to a ratio, a full-screen photo viewer with pinch zoom, the camera permission, and tests of picker-driven screens. Not for projects without media-kit.
+description: Writes, reviews and debugs image and file picking, image cropping and zoomable image previews in Compose Multiplatform apps that use media-kit (packages io.thernal.mediakit.media.*; rememberImagePicker, rememberFilePicker, ImageSource, PickResult, Rejection, MediaFile, MimeType, CameraPermission, MediaCameraPermissionProvidersModule, ImageCropScreen, ImageCropper, rememberImageCropState, CropOptions, AspectRatio, ZoomableImage, FakeMediaPickerProvider). Use it for any such work in such a project, even when the kit is not named - an avatar or photo upload, choosing several photos, taking a photo, attaching a PDF, file size or type limits, HEIC photos, rotated photos, cropping to a ratio, a full-screen photo viewer with pinch zoom, the camera permission, and tests of picker-driven screens. Not for projects without media-kit.
 ---
 
 # media-kit
@@ -14,8 +14,8 @@ preview), `media/README.md` (why).
 ```sh
 grep -rn --include=*.kt -e "rememberImagePicker(" -e "rememberFilePicker(" . | head   # existing pickers — copy their shape
 grep -rn --include=*.kt -e "ImageCropScreen(" -e "ImageCropper(" -e "ZoomableImage(" . | head
-grep -rn --include=*.kt -e "MediaCameraPermissionWiring" .    # is the camera permission replaced?
-grep -rn --include=*.kt -e "MediaWiring" -e "compositionLocals" .
+grep -rn --include=*.kt -e "MediaCameraPermissionProvidersModule" .    # is the camera permission replaced?
+grep -rn --include=*.kt -e "MediaProvidersModule" -e "compositionLocals" .
 grep -rn -e "NSCameraUsageDescription" --include=Info.plist .
 ```
 
@@ -49,7 +49,7 @@ status media-kit` shows what moved upstream; offer `kit update media-kit` rather
 - Never ask for `READ_MEDIA_IMAGES` or photo library access to pick photos: the system photo pickers need none.
 - Handle every `PickResult` branch; show `rejected` files, don't drop them silently.
 - Put user-facing words for rejections in the app's strings; the kit has none.
-- Replace the camera permission with `@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionWiring::class])`,
+- Replace the camera permission with `@ContributesTo(AppScope::class, replaces = [MediaCameraPermissionProvidersModule::class])`,
   never by editing the copied `wiring`.
 - Don't hold `MediaFile.bytes` in a ViewModel's state longer than needed — they are the whole file.
 - Upload is the app's: the kit hands over bytes and a MIME type.

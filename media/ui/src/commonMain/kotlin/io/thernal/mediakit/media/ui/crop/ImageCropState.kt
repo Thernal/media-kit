@@ -238,29 +238,48 @@ class ImageCropState(
 
     private fun relayout() {
         val isSwapped = isQuarterTurned(rotation)
-        val rotatedSize = if (isSwapped) {
+        val imageRect = fitRect(containerSize = containerSize, imageSize = turnedSize(isSwapped))
+        if (imageRect == Rect.Zero) {
+            return
+        }
+        baseScale = quarterTurnScale(isSwapped = isSwapped, imageRect = imageRect)
+        val isFirstLayout = displayImageRect == Rect.Zero
+        displayImageRect = imageRect
+        if (isFirstLayout) {
+            applyInitialRatio()
+        }
+        placeFrame(imageRect)
+    }
+
+    private fun turnedSize(isSwapped: Boolean): Size {
+        return if (isSwapped) {
             Size(width = intrinsicSize.height, height = intrinsicSize.width)
         } else {
             intrinsicSize
         }
-        val imageRect = fitRect(containerSize = containerSize, imageSize = rotatedSize)
-        if (imageRect == Rect.Zero) {
-            return
-        }
-        // The image is laid out unrotated; after a quarter turn this scale fits the turned image again.
+    }
+
+    /** The image is laid out unrotated; after a quarter turn this scale fits the turned image again. */
+    private fun quarterTurnScale(
+        isSwapped: Boolean,
+        imageRect: Rect,
+    ): Float {
         val unrotated = fitRect(containerSize = containerSize, imageSize = intrinsicSize)
-        baseScale = if (isSwapped && unrotated.height > 0f) {
+        return if (isSwapped && unrotated.height > 0f) {
             imageRect.width / unrotated.height
         } else {
             1f
         }
-        val isFirstLayout = displayImageRect == Rect.Zero
-        displayImageRect = imageRect
-        if (isFirstLayout) {
-            val initial = options.initialRatio ?: AspectRatio.SQUARE.takeIf { options.isRatioLocked }
-            isLocked = initial != null
-            lockedRatio = initial?.value ?: 1f
-        }
+    }
+
+    private fun applyInitialRatio() {
+        val initial = options.initialRatio ?: AspectRatio.SQUARE.takeIf { options.isRatioLocked }
+        isLocked = initial != null
+        lockedRatio = initial?.value ?: 1f
+    }
+
+    /** The frame over the whole image, or centred at the locked ratio, within the bounds. */
+    private fun placeFrame(imageRect: Rect) {
         val raw = if (isLocked) {
             centeredFrame(ratio = lockedRatio, imageRect = imageRect)
         } else {

@@ -8,9 +8,3 @@ import io.thernal.mediakit.media.api.domain.ImageSource
 fun interface ImagePicker {
     fun pick(source: ImageSource)
 }
-
-/** Opens the system document picker; the result arrives in the `onResult` given to `rememberFilePicker`. */
-@Stable
-fun interface FilePicker {
-    fun pick()
-}

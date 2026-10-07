@@ -1,7 +1,6 @@
 package io.thernal.mediakit.media.api.presentation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
@@ -16,14 +15,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 interface CameraPermission {
     @Composable
     fun rememberCameraAccess(): CameraAccess
-}
-
-@Stable
-interface CameraAccess {
-    val isGranted: Boolean
-
-    /** Asks for the permission if the platform still can; returns whether it is granted now. */
-    suspend fun request(): Boolean
 }
 
 /**
