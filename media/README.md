@@ -66,6 +66,16 @@ parameters. An app with a design system passes its own bars and keeps the croppe
 optional bounds; its rules are one options value (D54). A frame chosen with a ratio is fitted inside the
 image — Act2Act spread it to the container's width, beyond a portrait image's sides.
 
+## Looks belong to the app's design system
+
+The kit owns behaviour — the gestures, the frame's rules, the crop — and none of the look. Every colour,
+shape, padding, text style and duration the cropper, the crop screen's default bars and `ZoomableImage`
+draw is a field of a style read from `MediaTheme.styles`, so one file in the app's design system decides
+them all and a kit update never changes how an app looks. The defaults (white on black) are there because
+previews and tests need something, not because they are a design. A design system shipped in the kit's
+`code` would be merged into every app's own on update, so the kit's example lives in
+`sample/designsystem`, which nothing copies.
+
 ## The crop engine
 
 The frame on screen is mapped back to the source's pixels in common code (`toNormalizedCropRect`: offset,

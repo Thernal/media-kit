@@ -12,15 +12,26 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.toSize
+import io.thernal.mediakit.media.ui.theme.MediaTheme
 
 /** The gestures of [ZoomableImage], for any content that should zoom the same way. */
 @Composable
-fun Modifier.zoomGestures(state: ZoomableState): Modifier {
+fun Modifier.zoomGestures(
+    state: ZoomableState,
+    style: ZoomableImageStyle = MediaTheme.styles.zoom,
+): Modifier {
     val scope = rememberCoroutineScope()
     return this
         .pointerInput(state) {
             detectTapGestures(
-                onDoubleTap = { tap -> state.doubleTap(tap = tap, viewSize = size.toSize(), scope = scope) },
+                onDoubleTap = { tap ->
+                    state.doubleTap(
+                        tap = tap,
+                        viewSize = size.toSize(),
+                        scope = scope,
+                        durationMillis = style.doubleTapMillis,
+                    )
+                },
             )
         }
         .pointerInput(state) { awaitEachGesture { trackZoomGesture(state) } }

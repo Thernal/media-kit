@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
+import io.thernal.mediakit.media.ui.theme.MediaTheme
 
 /**
  * An image the user can pinch, double-tap and pan — a full-screen photo viewer's content. [model] is
@@ -17,6 +18,7 @@ fun ZoomableImage(
     modifier: Modifier = Modifier,
     state: ZoomableState = rememberZoomableState(),
     contentScale: ContentScale = ContentScale.Fit,
+    style: ZoomableImageStyle = MediaTheme.styles.zoom,
 ) {
     AsyncImage(
         model = model,
@@ -29,6 +31,6 @@ fun ZoomableImage(
                 translationX = state.offset.x
                 translationY = state.offset.y
             }
-            .zoomGestures(state),
+            .zoomGestures(state = state, style = style),
     )
 }

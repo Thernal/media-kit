@@ -19,7 +19,6 @@ import kotlin.math.abs
 internal const val MIN_ZOOM = 1f
 internal const val MID_ZOOM = 2.5f
 internal const val MAX_ZOOM = 4f
-private const val DOUBLE_TAP_MILLIS = 300
 private const val PAN_BASE_SPEED = 1.35f
 private const val PAN_MAX_SPEED = 2.6f
 private const val PAN_CONSUME_EPSILON = 0.1f
@@ -85,6 +84,7 @@ class ZoomableState {
         tap: Offset,
         viewSize: Size,
         scope: CoroutineScope,
+        durationMillis: Int,
     ) {
         val startScale = scale
         val startOffset = offset
@@ -98,7 +98,7 @@ class ZoomableState {
         )
         animation?.cancel()
         animation = scope.launch {
-            animate(initialValue = 0f, targetValue = 1f, animationSpec = tween(DOUBLE_TAP_MILLIS)) { progress, _ ->
+            animate(initialValue = 0f, targetValue = 1f, animationSpec = tween(durationMillis)) { progress, _ ->
                 scale = startScale + (targetScale - startScale) * progress
                 offset = startOffset + (targetOffset - startOffset) * progress
             }
