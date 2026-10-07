@@ -21,7 +21,10 @@ internal class AnimatedPose(
 }
 
 @Composable
-internal fun rememberAnimatedPose(state: ImageCropState): AnimatedPose {
+internal fun rememberAnimatedPose(
+    state: ImageCropState,
+    turnMillis: Int,
+): AnimatedPose {
     // Before the mirror the rotation is negated, so the visual pose is the same and nothing animates.
     val visualRotation = if (state.isMirrored) {
         -state.rotation
@@ -34,7 +37,7 @@ internal fun rememberAnimatedPose(state: ImageCropState): AnimatedPose {
         val delta = (visualRotation - unwrapped) % FULL_TURN
         unwrapped += (delta + FULL_TURN + HALF_TURN) % FULL_TURN - HALF_TURN
     }
-    val spec = tween<Float>(TURN_ANIMATION_MILLIS)
+    val spec = tween<Float>(turnMillis)
     val mirrorTarget = if (state.isMirrored) {
         -1f
     } else {
@@ -50,5 +53,3 @@ internal fun rememberAnimatedPose(state: ImageCropState): AnimatedPose {
         mirrorState = animateFloatAsState(targetValue = mirrorTarget, animationSpec = spec, label = "cropMirror"),
     )
 }
-
-private const val TURN_ANIMATION_MILLIS = 220

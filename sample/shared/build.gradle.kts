@@ -19,6 +19,7 @@ kotlin {
                 implementation(projects.media.api)
                 implementation(projects.media.ui)
                 implementation(projects.media.wiring)
+                implementation(projects.sample.designsystem)
                 implementation(libs.compose.material3)
                 implementation(libs.coil.compose)
             }

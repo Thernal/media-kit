@@ -15,6 +15,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.toSize
 import coil3.compose.AsyncImage
+import io.thernal.mediakit.media.ui.theme.MediaTheme
 
 /**
  * The image under a movable, resizable crop frame. One finger on a corner resizes, inside the frame
@@ -25,7 +26,7 @@ import coil3.compose.AsyncImage
 fun ImageCropper(
     state: ImageCropState,
     modifier: Modifier = Modifier,
-    style: ImageCropperStyle = ImageCropperStyle(),
+    style: ImageCropperStyle = MediaTheme.styles.cropper,
 ) {
     var containerSize by remember { mutableStateOf(Size.Zero) }
     var intrinsicSize by remember { mutableStateOf(Size.Zero) }
@@ -34,7 +35,7 @@ fun ImageCropper(
             state.onLayout(containerSize = containerSize, intrinsicSize = intrinsicSize)
         }
     }
-    val pose = rememberAnimatedPose(state)
+    val pose = rememberAnimatedPose(state = state, turnMillis = style.turnMillis)
     val mirrorSign = if (state.isMirrored) {
         -1f
     } else {

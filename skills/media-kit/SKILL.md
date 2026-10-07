@@ -1,6 +1,6 @@
 ---
 name: media-kit
-description: Writes, reviews and debugs image and file picking, image cropping and zoomable image previews in Compose Multiplatform apps that use media-kit (packages io.thernal.mediakit.media.*; rememberImagePicker, rememberFilePicker, ImageSource, PickResult, Rejection, MediaFile, MimeType, CameraPermission, MediaCameraPermissionProvidersModule, ImageCropScreen, ImageCropper, rememberImageCropState, CropOptions, AspectRatio, ZoomableImage, FakeMediaPickerProvider). Use it for any such work in such a project, even when the kit is not named - an avatar or photo upload, choosing several photos, taking a photo, attaching a PDF, file size or type limits, HEIC photos, rotated photos, cropping to a ratio, a full-screen photo viewer with pinch zoom, the camera permission, and tests of picker-driven screens. Not for projects without media-kit.
+description: Writes, reviews and debugs image and file picking, image cropping and zoomable image previews in Compose Multiplatform apps that use media-kit (packages io.thernal.mediakit.media.*; rememberImagePicker, rememberFilePicker, ImageSource, PickResult, Rejection, MediaFile, MimeType, CameraPermission, MediaCameraPermissionProvidersModule, ImageCropScreen, ImageCropper, rememberImageCropState, CropOptions, AspectRatio, ZoomableImage, MediaTheme, MediaStyles, FakeMediaPickerProvider). Use it for any such work in such a project, even when the kit is not named - an avatar or photo upload, choosing several photos, taking a photo, attaching a PDF, file size or type limits, HEIC photos, rotated photos, cropping to a ratio, a full-screen photo viewer with pinch zoom, styling the cropper from the design system, the camera permission, and tests of picker-driven screens. Not for projects without media-kit.
 ---
 
 # media-kit
@@ -15,6 +15,7 @@ preview), `media/README.md` (why).
 grep -rn --include=*.kt -e "rememberImagePicker(" -e "rememberFilePicker(" . | head   # existing pickers — copy their shape
 grep -rn --include=*.kt -e "ImageCropScreen(" -e "ImageCropper(" -e "ZoomableImage(" . | head
 grep -rn --include=*.kt -e "MediaCameraPermissionProvidersModule" .    # is the camera permission replaced?
+grep -rn --include=*.kt -e "MediaStyles(" -e "MediaTheme(" .           # token mapping
 grep -rn --include=*.kt -e "MediaProvidersModule" -e "compositionLocals" .
 grep -rn -e "NSCameraUsageDescription" --include=Info.plist .
 ```
@@ -33,6 +34,9 @@ status media-kit` shows what moved upstream; offer `kit update media-kit` rather
 - Crop: `ImageCropScreen(rememberImageCropState(file, CropOptions(...)), onCancel, onCropped, onError)`, or
   `ImageCropper(state)` with the app's own controls. Preview: `ZoomableImage(model, …)`.
 - The camera permission goes through `CameraPermission`; the kit's is minimal and meant to be replaced.
+- Looks come from `ImageCropperStyle`, `ImageCropScreenStyle`, `ZoomableImageStyle`, defaulting to
+  `MediaTheme.styles`; the app maps its design system's tokens once, in one file of its design-system module
+  (`appMediaStyles()`), installed at the root. Never restyle by editing kit code.
 
 ## 3. Tasks
 

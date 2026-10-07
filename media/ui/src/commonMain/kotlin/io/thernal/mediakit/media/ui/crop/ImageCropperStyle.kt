@@ -16,7 +16,10 @@ data class ImageCropperStyle(
     val handleWidth: Dp = 4.dp,
     /** How near a corner a touch must start to resize rather than move. */
     val touchSlop: Dp = 40.dp,
+    /** How long a quarter turn or a mirror takes. */
+    val turnMillis: Int = DEFAULT_TURN_MILLIS,
 )
 
 private const val SCRIM_ALPHA = 0.6f
 private const val GRID_ALPHA = 0.3f
+private const val DEFAULT_TURN_MILLIS = 220

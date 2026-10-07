@@ -53,4 +53,5 @@ requires:
   - android the root composes inside a ComponentActivity; nothing in the manifest unless the app declares CAMERA itself
   - ios Info.plist carries NSCameraUsageDescription when the camera is offered
   - permission the kit's CameraPermission is minimal — replace it with the app's own through a container that replaces MediaCameraPermissionProvidersModule (media/api/README.md)
+  - styles the app maps its design system's tokens onto MediaStyles in one file of its own design-system module and installs MediaTheme(styles = …) at the root; the kit's defaults are neutral fallbacks for previews and tests, and kit code is never edited to restyle
   - settings enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS"), and each code part included as a module

@@ -37,6 +37,10 @@ CompositionLocalProvider(*graph.compositionLocals.toTypedArray()) { AppContent()
 With arch-kit, `ContributedLocals(…)` installs the same set. On Android the root must be inside a
 `ComponentActivity` (the launchers need an activity-result registry).
 
+The cropper's and the preview's looks are mapped from the app's design system once and installed at the
+same root: `AppTheme { MediaTheme(styles = appMediaStyles()) { … } }` — [cropping.md](cropping.md) → The
+app's design system.
+
 ## Manifest and Info.plist
 
 - iOS: `NSCameraUsageDescription` if the camera is offered. The photo and document pickers need nothing.

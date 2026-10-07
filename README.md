@@ -85,8 +85,9 @@ The same by hand, from a clone of this repository.
 | `media/api` | `MediaFile`, `MimeType`, `PickResult`/`Rejection`, `ImageSource`, `CropOptions`, `AspectRatio`; `MediaPickerProvider`, `rememberImagePicker`, `rememberFilePicker`; `CameraPermission` | Compose runtime |
 | `media/impl` | the Android pickers (Photo Picker, camera through the kit's FileProvider, Storage Access Framework), the iOS pickers (PHPicker, UIImagePickerController, UIDocumentPicker), HEIC and orientation, the minimal camera permission | api, activity-compose, core, exifinterface (Android) |
 | `media/wiring` | the pickers and the camera permission as `ProvidedValue`s in the app graph | api, impl, Metro |
-| `media/ui` | the crop engine (Android, iOS), `ImageCropState`, `ImageCropper`, `ImageCropScreen`, `ZoomableImage` | api, Coil 3 |
+| `media/ui` | the crop engine (Android, iOS), `ImageCropState`, `ImageCropper`, `ImageCropScreen`, `ZoomableImage`; their styles and `MediaTheme` | api, Coil 3 |
 | `media/testing` | `FakeMediaPickerProvider`, `FakeCameraPermission`, `testImage()` | api |
+| `sample/designsystem` | a small design system and its mapping onto `MediaStyles` — how an app styles the kit | the kit — never copied |
 | `sample/shared`, `sample/android`, `sample/ios` | pick, crop, preview on both platforms | the kit — never copied |
 
 A feature that only picks needs `api`; one that crops or previews adds `ui`.
