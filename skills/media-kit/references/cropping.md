@@ -21,7 +21,7 @@ Show it as the app's own route or full-screen dialog; pass the picked `MediaFile
 translated labels (`cancelLabel`, `doneLabel`, `freeLabel`, …) if they suffice.
 
 Looks come from the app's design system, never from editing the kit: one app-owned file in the
-design-system module, `designsystem/…/media/AppMediaStyles.kt`, `@Composable fun appMediaStyles(): MediaStyles`
+design-system module, `core/designsystem/…/media/AppMediaStyles.kt`, `@Composable fun appMediaStyles(): MediaStyles`
 — `MediaStyles(cropper = ImageCropperStyle(…), cropScreen = ImageCropScreenStyle(…, ratioChip = CropRatioChipStyle(…)),
 zoom = ZoomableImageStyle(…))` from the design system's tokens — installed at the root inside the design
 system's theme: `AppTheme { MediaTheme(styles = appMediaStyles()) { … } }`. No mapping yet (white on black,

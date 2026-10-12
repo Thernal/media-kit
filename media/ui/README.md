@@ -51,7 +51,7 @@ The kit decides how the cropper and the preview behave — gestures, the frame's
 `ImageCropScreen` and `ZoomableImage` take a style, defaulting to `MediaTheme.styles`, and the app fills
 `MediaStyles` from its own tokens, once:
 
-- **One file, in the app's design-system module** — `designsystem/…/media/AppMediaStyles.kt`, a
+- **One file, in the app's design-system module** — `core/designsystem/…/media/AppMediaStyles.kt`, a
   `@Composable fun appMediaStyles(): MediaStyles` that reads the design system's theme. It is the app's
   code: no kit update touches it.
 - **Installed at the root**, inside the design system's theme: `AppTheme { MediaTheme(styles = appMediaStyles()) { … } }`.
