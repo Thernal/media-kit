@@ -15,7 +15,7 @@ internal fun NSData.toByteArray(): ByteArray {
         return ByteArray(0)
     }
     val bytes = ByteArray(size)
-    bytes.usePinned { pinned -> memcpy(pinned.addressOf(0), this.bytes, length) }
+    val _ = bytes.usePinned { pinned -> memcpy(pinned.addressOf(0), this.bytes, length) }
     return bytes
 }
 
