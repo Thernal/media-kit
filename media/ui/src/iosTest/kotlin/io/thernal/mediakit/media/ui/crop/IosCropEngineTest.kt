@@ -30,7 +30,7 @@ private fun testPng(): MediaFile {
     }
     val data = UIImagePNGRepresentation(image)!!
     val bytes = ByteArray(data.length.toInt())
-    bytes.usePinned { memcpy(it.addressOf(0), data.bytes, data.length) }
+    val _ = bytes.usePinned { memcpy(it.addressOf(0), data.bytes, data.length) }
     return MediaFile(name = "test.png", bytes = bytes, mimeType = MimeType.Image.PNG)
 }
 

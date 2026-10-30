@@ -115,7 +115,7 @@ internal fun turnOrientation(
 private fun NSData.toByteArray(): ByteArray {
     val bytes = ByteArray(length.toInt())
     if (bytes.isNotEmpty()) {
-        bytes.usePinned { pinned -> memcpy(pinned.addressOf(0), this.bytes, length) }
+        val _ = bytes.usePinned { pinned -> memcpy(pinned.addressOf(0), this.bytes, length) }
     }
     return bytes
 }
